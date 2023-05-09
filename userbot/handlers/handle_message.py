@@ -10,6 +10,7 @@ from pyrogram.types import Message
 
 from userbot.config import config
 from userbot.db.db_api import users
+from userbot.filters.count_messages import is_first_message
 
 
 def format_greeting(date: datetime) -> str:
@@ -37,23 +38,15 @@ async def send_chat_action_typing(client: Client, user_id: int, duration: int = 
         await sleep(AVERAGE_TYPING_DURATION)
 
 
-@Client.on_message(filters.private & filters.incoming)
-async def get_any_message(client: Client, message: Message):
-    user_id = message.from_user.id
-    await sleep(5)
-    await client.read_chat_history(chat_id=user_id)
-    await sleep(5)
-    await send_chat_action_typing(client, user_id, duration=20)
-
-
-@Client.on_message(filters.private & filters.outgoing & (filters.text | filters.caption))
-async def get_outgoing_message(client: Client, message: Message):
+@Client.on_message(
+    filters.private & filters.incoming & is_first_message & (filters.text | filters.caption) & ~filters.bot)
+async def get_first_incoming_message(client: Client, message: Message):
+    """ловит первое сообщение от пользователя, записывает данные в гугл-таблицу и отвечает с задержкой"""
     user_id = message.from_user.id
     user = await users.find_one(filter={'_id': user_id})
+    print(user, 1)
     if user:
         return
-
-    print(message)
 
     username = message.from_user.username if message.from_user.username else '-'
     phone = message.from_user.phone_number if message.from_user.phone_number else '-'
@@ -83,14 +76,41 @@ async def get_outgoing_message(client: Client, message: Message):
     await client.read_chat_history(chat_id=user_id)
 
     # задержка перед началом печати
-    seconds = randint(5, 13)
+    seconds = randint(4, 11)
     await sleep(delay=seconds)
 
     # рандомное время печати
-    seconds = randint(15, 30)
+    seconds = randint(10, 20)
     await send_chat_action_typing(client, user_id, duration=seconds)
 
     greeting = format_greeting(date_time)
     text = f'{greeting} Напишите свой номер, я буду в офисе - Вам наберу.'
     await client.send_message(chat_id=user_id,
                               text=text)
+
+
+@Client.on_message(
+    filters.private & filters.incoming & ~is_first_message & (filters.text | filters.caption) & ~filters.bot)
+async def get_incoming_message(_: Client, message: Message):
+    """ловит НЕ первое сообщение, просто дописывает его текст в ячейку с текстом"""
+    user_id = message.from_user.id
+    user = await users.find_one(filter={'_id': user_id})
+    if not user:
+        return
+    row = user['row']
+
+    google_client_manager = config.misc.google_client_manager
+    google_client = await google_client_manager.authorize()
+    spreadsheet = await google_client.open_by_key(config.misc.google_sheet_key)
+    worksheet = await spreadsheet.get_worksheet(0)
+
+    cell = await worksheet.cell(row=row,
+                                col=5)
+    previous_text = cell.value
+    text = message.text if message.text else message.caption
+    text = f'{previous_text}\n' \
+           f'{text}'
+
+    await worksheet.update_cell(row=row,
+                                col=5,
+                                value=text)

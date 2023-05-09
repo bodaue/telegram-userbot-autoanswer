@@ -1,6 +1,6 @@
-pyrogram
+pyrogram~=2.0.106
 tgcrypto
-motor
+motor~=3.1.2
 
 gspread==5.7.2
 gspread-asyncio==1.8.1
@@ -9,3 +9,6 @@ google-api-python-client==2.86.0
 google-auth-httplib2
 google-auth-oauthlib==1.0.0
 
+
+pytz~=2023.3
+environs~=9.5.0
