@@ -10,22 +10,22 @@ from pyrogram.types import Message
 
 from userbot.config import config
 from userbot.db.db_api import users
-from userbot.filters.count_messages import is_first_message
+from userbot.filters.filter import is_user, is_first_message
 
 
 def format_greeting(date: datetime) -> str:
     hours = date.hour
     if hours in (4, 5, 6, 7, 8, 9, 10, 11):
-        return 'Доброе утро.'
+        return 'Доброе утро'
 
     if hours in (12, 13, 14, 15, 16):
-        return 'Добрый день.'
+        return 'Добрый день'
 
     if hours in (17, 18, 19, 20, 21, 22, 23):
-        return 'Добрый вечер.'
+        return 'Добрый вечер'
 
     if hours in (0, 1, 2, 3):
-        return 'Доброй ночи.'
+        return 'Доброй ночи'
 
 
 AVERAGE_TYPING_DURATION = 5
@@ -39,14 +39,10 @@ async def send_chat_action_typing(client: Client, user_id: int, duration: int = 
 
 
 @Client.on_message(
-    filters.private & filters.incoming & is_first_message & (filters.text | filters.caption) & ~filters.bot)
+    filters.private & filters.incoming & is_first_message & ~is_user & (filters.text | filters.caption) & ~filters.bot)
 async def get_first_incoming_message(client: Client, message: Message):
     """ловит первое сообщение от пользователя, записывает текст в гугл-таблицу и отвечает с задержкой"""
     user_id = message.from_user.id
-    user = await users.find_one(filter={'_id': user_id})
-    print(user, 1)
-    if user:
-        return
 
     username = message.from_user.username if message.from_user.username else '-'
     phone = message.from_user.phone_number if message.from_user.phone_number else '-'
@@ -84,20 +80,19 @@ async def get_first_incoming_message(client: Client, message: Message):
     await send_chat_action_typing(client, user_id, duration=seconds)
 
     greeting = format_greeting(date_time)
-    text = f'{greeting} Напишите свой номер, я буду в офисе - Вам наберу.'
+    text = f'{greeting}, напишите свой номер я буду в офисе наберу.'
     await client.send_message(chat_id=user_id,
                               text=text)
 
 
 @Client.on_message(
-    filters.private & filters.incoming & ~is_first_message & (filters.text | filters.caption) & ~filters.bot)
+    filters.private & filters.incoming & is_user & (filters.text | filters.caption) & ~filters.bot)
 async def get_incoming_message(_: Client, message: Message):
     """ловит НЕ первое сообщение, просто дописывает текст сообщения в ячейку с текстом"""
     user_id = message.from_user.id
     user = await users.find_one(filter={'_id': user_id})
-    if not user:
-        return
     row = user['row']
+    print(user, 2)
 
     google_client_manager = config.misc.google_client_manager
     google_client = await google_client_manager.authorize()
