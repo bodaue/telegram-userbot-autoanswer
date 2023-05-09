@@ -1,0 +1,11 @@
+pyrogram
+tgcrypto
+motor
+
+gspread==5.7.2
+gspread-asyncio==1.8.1
+oauth2client~=4.1.3
+google-api-python-client==2.86.0
+google-auth-httplib2
+google-auth-oauthlib==1.0.0
+
