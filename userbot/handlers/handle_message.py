@@ -41,7 +41,7 @@ async def send_chat_action_typing(client: Client, user_id: int, duration: int = 
 @Client.on_message(
     filters.private & filters.incoming & is_first_message & (filters.text | filters.caption) & ~filters.bot)
 async def get_first_incoming_message(client: Client, message: Message):
-    """ловит первое сообщение от пользователя, записывает данные в гугл-таблицу и отвечает с задержкой"""
+    """ловит первое сообщение от пользователя, записывает текст в гугл-таблицу и отвечает с задержкой"""
     user_id = message.from_user.id
     user = await users.find_one(filter={'_id': user_id})
     print(user, 1)
@@ -92,7 +92,7 @@ async def get_first_incoming_message(client: Client, message: Message):
 @Client.on_message(
     filters.private & filters.incoming & ~is_first_message & (filters.text | filters.caption) & ~filters.bot)
 async def get_incoming_message(_: Client, message: Message):
-    """ловит НЕ первое сообщение, просто дописывает его текст в ячейку с текстом"""
+    """ловит НЕ первое сообщение, просто дописывает текст сообщения в ячейку с текстом"""
     user_id = message.from_user.id
     user = await users.find_one(filter={'_id': user_id})
     if not user:
