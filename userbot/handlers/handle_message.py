@@ -61,9 +61,9 @@ async def get_first_incoming_message(client: Client, message: Message):
     google_client = await google_client_manager.authorize()
     spreadsheet = await google_client.open_by_key(config.misc.google_sheet_key)
     worksheet = await spreadsheet.get_worksheet(0)
-    a = await worksheet.append_row([date, time, username, phone, text])
+    update_info = await worksheet.append_row([date, time, username, phone, text])
 
-    cell_range = (a['updates']['updatedRange'])  # Формат: 'Название_листа'!A1:E1
+    cell_range = update_info['updates']['updatedRange']  # Формат: 'Название_листа'!A1:E1
     comp = re.compile(r'(![A-Z])(\d+)')
     row = int(comp.search(cell_range).group(2))
 
