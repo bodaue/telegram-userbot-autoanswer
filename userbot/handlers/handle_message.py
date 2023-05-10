@@ -38,15 +38,14 @@ async def send_chat_action_typing(client: Client, user_id: int, duration: int = 
         await sleep(AVERAGE_TYPING_DURATION)
 
 
-@Client.on_message(
-    filters.private & filters.incoming & is_first_message & ~is_user & (filters.text | filters.caption) & ~filters.bot)
+@Client.on_message(filters.private & filters.incoming & is_first_message & ~is_user & ~filters.bot)
 async def get_first_incoming_message(client: Client, message: Message):
     """ловит первое сообщение от пользователя, записывает текст в гугл-таблицу и отвечает с задержкой"""
     user_id = message.from_user.id
 
     username = message.from_user.username if message.from_user.username else '-'
     phone = message.from_user.phone_number if message.from_user.phone_number else '-'
-    text = message.text if message.text else message.caption
+    text = message.text if message.text else message.caption if message.caption else '-'
 
     tz = pytz.timezone('America/Los_Angeles')
     date_time = datetime.now(tz=tz)
